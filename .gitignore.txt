@@ -1,1 +1,0 @@
-echo -e "venv/\n*.db\n__pycache__/\n*.pyc" > .gitignore
