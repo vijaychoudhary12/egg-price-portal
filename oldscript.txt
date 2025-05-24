@@ -1,0 +1,1748 @@
+// static/js/script.js
+
+// Global variables
+let priceMap = null;
+let mapMarkersLayer = null;
+let allMarkers = {};
+let activeLines = [];
+let activeHighlights = [];
+let priceTrendChart = null;
+let predictionChart = null;
+let yearlyAvgChart = null;
+let monthlyAvgChart = null;
+let consolidatedData = [];
+let comparisonTrendChart = null;
+let comparisonPredictionChart = null;
+const MAX_COMPARE_CITIES = 4;
+const comparisonColors = ['rgb(78, 115, 223)', 'rgb(231, 74, 59)', 'rgb(28, 200, 138)', 'rgb(246, 194, 62)'];
+
+const districtCoordinates = { // Add the full list provided by user
+    'Agra': {'lat': 27.1767, 'lon': 78.0081}, 'Ahmedabad': {'lat': 23.0225, 'lon': 72.5714},
+    'Ahmednagar': {'lat': 19.0941, 'lon': 74.7381}, 'Ajmer': {'lat': 26.4499, 'lon': 74.6399},
+    'Alipurduar': {'lat': 26.4866, 'lon': 89.5288}, 'Almora': {'lat': 29.5937, 'lon': 79.6603},
+    'Alwar': {'lat': 27.5530, 'lon': 76.6346}, 'Ambala': {'lat': 30.3782, 'lon': 76.7767},
+    'Amritsar': {'lat': 31.6340, 'lon': 74.8723}, 'Anakapalli': {'lat': 17.6879, 'lon': 83.0100},
+    'Aurangabad (Chhatrapati Sambhajinagar)': {'lat': 19.8762, 'lon': 75.3433},
+    'Ayodhya': {'lat': 26.7917, 'lon': 82.1981}, 'Baramulla': {'lat': 34.1931, 'lon': 74.3502},
+    'Bareilly': {'lat': 28.3670, 'lon': 79.4304}, 'Barmer': {'lat': 25.7498, 'lon': 71.4111},
+    'Bathinda': {'lat': 30.2110, 'lon': 74.9455}, 'Belagavi': {'lat': 15.8497, 'lon': 74.4977},
+    'Bengaluru Urban': {'lat': 12.9716, 'lon': 77.5946}, 'Bidar': {'lat': 17.9104, 'lon': 77.5199},
+    'Bikaner': {'lat': 28.0229, 'lon': 73.3119}, 'Cachar': {'lat': 24.8201, 'lon': 92.7919},
+    'Chamba': {'lat': 32.5533, 'lon': 76.1257}, 'Chamoli': {'lat': 30.4045, 'lon': 79.5604},
+    'Chandigarh': {'lat': 30.7333, 'lon': 76.7794}, 'Chengalpattu': {'lat': 12.6944, 'lon': 79.9815},
+    'Chennai': {'lat': 13.0827, 'lon': 80.2707}, 'Coimbatore': {'lat': 11.0168, 'lon': 76.9558},
+    'Darbhanga': {'lat': 26.1512, 'lon': 85.8940}, 'Darjeeling': {'lat': 27.0410, 'lon': 88.2663},
+    'Dehradun': {'lat': 30.3165, 'lon': 78.0322}, 'Delhi': {'lat': 28.7041, 'lon': 77.1025},
+    'Devbhumi Dwarka': {'lat': 22.2405, 'lon': 68.9688}, 'Dibrugarh': {'lat': 27.4728, 'lon': 94.9117},
+    'Dimapur': {'lat': 25.9060, 'lon': 93.7376}, 'East Khasi Hills': {'lat': 25.5764, 'lon': 91.8833},
+    'Ernakulam': {'lat': 9.9312, 'lon': 76.2673}, 'Faridabad': {'lat': 28.4089, 'lon': 77.3178},
+    'Ferozepur': {'lat': 30.9243, 'lon': 74.6017}, 'Gandhinagar': {'lat': 23.2156, 'lon': 72.6369},
+    'Ghaziabad': {'lat': 28.6692, 'lon': 77.4538}, 'Gorakhpur': {'lat': 26.7606, 'lon': 83.3732},
+    'Gurugram': {'lat': 28.4595, 'lon': 77.0266}, 'Gwalior': {'lat': 26.2183, 'lon': 78.1828},
+    'Haridwar': {'lat': 29.9457, 'lon': 78.1642}, 'Indore': {'lat': 22.7196, 'lon': 75.8577},
+    'Jabalpur': {'lat': 23.1815, 'lon': 79.9864}, 'Jagatsinghpur': {'lat': 20.2663, 'lon': 86.1691},
+    'Jaipur': {'lat': 26.9124, 'lon': 75.7873}, 'Jaisalmer': {'lat': 26.9157, 'lon': 70.9083},
+    'Jalandhar': {'lat': 31.3260, 'lon': 75.5762}, 'Jalpaiguri': {'lat': 26.5277, 'lon': 88.7157},
+    'Jammu': {'lat': 32.7266, 'lon': 74.8570}, 'Jamnagar': {'lat': 22.4707, 'lon': 70.0577},
+    'Jhansi': {'lat': 25.4484, 'lon': 78.5685}, 'Jodhpur': {'lat': 26.2389, 'lon': 73.0243},
+    'Jorhat': {'lat': 26.7528, 'lon': 94.2129}, 'Kamrup Metropolitan': {'lat': 26.1445, 'lon': 91.7362},
+    'Kannur': {'lat': 11.8745, 'lon': 75.3704}, 'Kanpur Nagar': {'lat': 26.4499, 'lon': 80.3319},
+    'Katihar': {'lat': 25.5433, 'lon': 87.5694}, 'Khordha': {'lat': 20.1817, 'lon': 85.6686},
+    'Kodagu': {'lat': 12.3375, 'lon': 75.7420}, 'Kolkata': {'lat': 22.5726, 'lon': 88.3639},
+    'Kollam': {'lat': 8.8932, 'lon': 76.6141}, 'Kutch': {'lat': 23.7337, 'lon': 69.8597},
+    'Lakshadweep': {'lat': 10.5667, 'lon': 72.6417}, 'Leh': {'lat': 34.1526, 'lon': 77.5771},
+    'Lucknow': {'lat': 26.8467, 'lon': 80.9462}, 'Ludhiana': {'lat': 30.9010, 'lon': 75.8573},
+    'Madurai': {'lat': 9.9252, 'lon': 78.1198}, 'Mathura': {'lat': 27.4924, 'lon': 77.6737},
+    'Medchal-Malkajgiri': {'lat': 17.5268, 'lon': 78.5519}, 'Meerut': {'lat': 28.9845, 'lon': 77.7064},
+    'Mumbai City': {'lat': 18.9248, 'lon': 72.8347}, 'Mumbai Suburban': {'lat': 19.1136, 'lon': 72.8697},
+    'Muzaffurpur': {'lat': 26.1224, 'lon': 85.3903}, 'Mysuru': {'lat': 12.2958, 'lon': 76.6394},
+    'Nagpur': {'lat': 21.1458, 'lon': 79.0882}, 'Nainital': {'lat': 29.3803, 'lon': 79.4636},
+    'Nashik': {'lat': 19.9975, 'lon': 73.7898}, 'Nicobar': {'lat': 7.8316, 'lon': 93.5000},
+    'Nilgiris': {'lat': 11.4100, 'lon': 76.7300}, 'North 24 Parganas': {'lat': 22.7383, 'lon': 88.6121},
+    'North and Middle Andaman': {'lat': 12.8471, 'lon': 92.8515}, 'North Goa': {'lat': 15.5990, 'lon': 73.8739},
+    'Panchkula': {'lat': 30.6942, 'lon': 76.8606}, 'Paschim Bardhaman': {'lat': 23.6816, 'lon': 86.9537},
+    'Paschim Medinipur': {'lat': 22.4370, 'lon': 87.3224}, 'Pathankot': {'lat': 32.2661, 'lon': 75.6149},
+    'Patna': {'lat': 25.5941, 'lon': 85.1376}, 'Pauri Garhwal': {'lat': 30.1484, 'lon': 78.7754},
+    'Pithoragarh': {'lat': 29.5826, 'lon': 80.2180}, 'Porbandar': {'lat': 21.6417, 'lon': 69.6293},
+    'Prayagraj': {'lat': 25.4358, 'lon': 81.8463}, 'Pulwama': {'lat': 33.8701, 'lon': 74.8952},
+    'Pune': {'lat': 18.5204, 'lon': 73.8567}, 'Purnea': {'lat': 25.7775, 'lon': 87.4753},
+    'Raigad': {'lat': 18.5166, 'lon': 73.1822}, 'Rajouri': {'lat': 33.3786, 'lon': 74.3016},
+    'Ramanathapuram': {'lat': 9.3639, 'lon': 78.8367}, 'Ramgarh': {'lat': 23.6389, 'lon': 85.5181},
+    'Ranchi': {'lat': 23.3441, 'lon': 85.3096}, 'Ranipet': {'lat': 12.9283, 'lon': 79.3311},
+    'Sagar': {'lat': 23.8388, 'lon': 78.7378}, 'Saharanpur': {'lat': 29.9641, 'lon': 77.5460},
+    'Shimla': {'lat': 31.1048, 'lon': 77.1734}, 'Sirsa': {'lat': 29.5348, 'lon': 75.0271},
+    'Solan': {'lat': 30.9085, 'lon': 77.0992}, 'Sonitpur': {'lat': 26.6733, 'lon': 92.7897},
+    'South Andaman': {'lat': 11.7401, 'lon': 92.6586}, 'South Goa': {'lat': 15.2993, 'lon': 74.1240},
+    'Sri Ganganagar': {'lat': 29.9087, 'lon': 73.8637}, 'Srinagar': {'lat': 34.0837, 'lon': 74.7973},
+    'Thanjavur': {'lat': 10.7870, 'lon': 79.1378}, 'Thiruvananthapuram': {'lat': 8.5241, 'lon': 76.9366},
+    'Thoothukudi': {'lat': 8.7642, 'lon': 78.1348}, 'Tirunelveli': {'lat': 8.7139, 'lon': 77.7567},
+    'Udhampur': {'lat': 32.9283, 'lon': 75.1390}, 'Uttara Kannada': {'lat': 14.9642, 'lon': 74.4703},
+    'Vadodara': {'lat': 22.3072, 'lon': 73.1812}, 'Varanasi': {'lat': 25.3176, 'lon': 82.9739},
+    'Vikarabad': {'lat': 17.3311, 'lon': 77.9003}, 'Visakhapatnam': {'lat': 17.6868, 'lon': 83.2185},
+    'Vizianagaram': {'lat': 18.1067, 'lon': 83.3956}, 'West Tripura': {'lat': 23.8315, 'lon': 91.2868}
+    // Add other districts as needed
+};
+// Ensure NECC city names match *exactly* those from backend API
+const neccCityCoordinates = { // Renamed from previous response for clarity
+    'Ahmedabad': {'lat': 23.0225, 'lon': 72.5714},
+    'Ajmer': {'lat': 26.4499, 'lon': 74.6399},
+    'Allahabad (CC)': {'lat': 25.4358, 'lon': 81.8463},
+    'Barwala': {'lat': 29.3711, 'lon': 75.9044},
+    'Bengaluru (CC)': {'lat': 12.9716, 'lon': 77.5946},
+    'Bhopal': {'lat': 23.2599, 'lon': 77.4126},
+    'Brahmapur (OD)': {'lat': 19.3151, 'lon': 84.7941},
+    'Chennai (CC)': {'lat': 13.0827, 'lon': 80.2707},
+    'Chittoor': {'lat': 13.2171, 'lon': 79.0977},
+    'Delhi (CC)': {'lat': 28.7041, 'lon': 77.1025},
+    'E.Godavari': {'lat': 16.9891, 'lon': 82.2475},
+    'Hospet': {'lat': 15.2699, 'lon': 76.3872},
+    'Hyderabad': {'lat': 17.385, 'lon': 78.4867},
+    'Indore (CC)': {'lat': 22.7196, 'lon': 75.8577},
+    'Jabalpur': {'lat': 23.1815, 'lon': 79.9864},
+    'Kanpur (CC)': {'lat': 26.4499, 'lon': 80.3319},
+    'Kolkata (WB)': {'lat': 22.5726, 'lon': 88.3639},
+    'Luknow (CC)': {'lat': 26.8467, 'lon': 80.9462}, // Corrected spelling
+    'Ludhiana': {'lat': 30.901, 'lon': 75.8573},
+    'Mumbai (CC)': {'lat': 19.076, 'lon': 72.8777},
+    'Muzaffurpur (CC)': {'lat': 26.1224, 'lon': 85.3903},
+    'Mysuru': {'lat': 12.2958, 'lon': 76.6394},
+    'Nagpur': {'lat': 21.1458, 'lon': 79.0882},
+    'Namakkal': {'lat': 11.2203, 'lon': 78.1696},
+    'Patna': {'lat': 25.5941, 'lon': 85.1376},
+    'Pune': {'lat': 18.5204, 'lon': 73.8567},
+    'Raipur': {'lat': 21.2514, 'lon': 81.6296},
+    'Ranchi  (CC)': {'lat': 23.3441, 'lon': 85.3096}, // Corrected spacing
+    'Surat': {'lat': 21.1702, 'lon': 72.8311},
+    'Varanasi (CC)': {'lat': 25.3176, 'lon': 82.9739},
+    'Vijayawada': {'lat': 16.5062, 'lon': 80.648},
+    'Vizag': {'lat': 17.7240, 'lon': 82.7347},
+    'W.Godavari': {'lat': 16.7127, 'lon': 81.1015},
+    'Warangal': {'lat': 17.9689, 'lon': 79.5941}
+};
+
+// Global state
+let currentView = {
+    type: null,
+    name: null,
+    neccCity: null
+};
+let currentStartDate = null;
+let currentEndDate = null;
+let activeTab = 'priceTrendTab'; // Track active tab
+
+// Initialization
+$(window).on('load', function() {
+    console.log('Window loaded, initializing dashboard...');
+    
+    // Verify dependencies
+    if (!$.fn.tab) {
+        console.error('Bootstrap tab plugin not found. Ensure Bootstrap JS is loaded.');
+    }
+    if (!window.Chart) {
+        console.error('Chart.js not found. Ensure Chart.js is loaded.');
+    }
+
+    // Initialize Select2
+    $('#districtSelect').select2({
+        theme: "bootstrap-5",
+        placeholder: $(this).data('placeholder'),
+    });
+    $('#citySelect').select2({
+        theme: "bootstrap-5",
+        placeholder: $(this).data('placeholder'),
+    });
+    $('#compareCitySelect').select2({
+        theme: "bootstrap-5",
+        dropdownParent: $('#comparisonModal'),
+        placeholder: "Select cities...",
+        maximumSelectionLength: MAX_COMPARE_CITIES,
+        closeOnSelect: false
+    });
+
+    // Set current year
+    $('#currentYear').text(new Date().getFullYear());
+
+    // Event Listeners
+    $('#districtSelect').on('change', handleDistrictSelection);
+    $('#citySelect').on('change', handleCitySelection);
+    $('#applyDateFilterBtn').on('click', applyDateFilter);
+    $('#resetDateFilterBtn').on('click', resetDateFilter);
+    $('#refreshMapBtn').on('click', updateMapMarkers);
+    $('#refreshConsolidatedBtn').on('click', loadConsolidatedPredictions);
+    $('#generateComparisonBtn').on('click', generateComparison);
+
+    // Map popup button listeners
+    $('#mapid').on('click', '.load-dashboard-btn', function() {
+        const cityToLoad = $(this).data('city');
+        if(cityToLoad) {
+            $('#citySelect').val(cityToLoad).trigger('change');
+            if(priceMap) priceMap.closePopup();
+        }
+    });
+    $('#mapid').on('click', '.load-necc-dashboard-btn', function() {
+        const cityToLoad = $(this).data('city');
+        if(cityToLoad) {
+            $('#citySelect').val(cityToLoad).trigger('change');
+            if(priceMap) priceMap.closePopup();
+        }
+    });
+
+    // Tab activation listener (delegated event)
+    $('#chartsTabs').on('click', 'a.nav-link', function(e) {
+        e.preventDefault();
+        const $this = $(this);
+        const newTab = $this.attr('id');
+        const targetPane = $this.attr('href');
+
+        if (newTab === activeTab) {
+            console.log(`Tab ${newTab} is already active, skipping.`);
+            return;
+        }
+
+        console.log(`Attempting to switch to tab: ${newTab} (pane: ${targetPane})`);
+        activeTab = newTab;
+
+        // Try Bootstrap tab activation
+        try {
+            $this.tab('show');
+            console.log(`Bootstrap tab ${newTab} activated.`);
+        } catch (err) {
+            console.warn(`Bootstrap tab activation failed: ${err.message}, falling back to manual toggle.`);
+            // Manual fallback
+            $('#chartsTabs a.nav-link').removeClass('active');
+            $(`.tab-content .tab-pane`).removeClass('show active');
+            $this.addClass('active');
+            $(targetPane).addClass('show active');
+        }
+
+        // Refresh tab content if a city is selected
+        if (currentView.neccCity) {
+            console.log(`Refreshing content for ${newTab} with city: ${currentView.neccCity}`);
+            showTabLoading(newTab);
+            fetchAndDisplayCityDetails(currentView.neccCity, null, currentStartDate, currentEndDate)
+                .finally(() => {
+                    hideTabLoading(newTab);
+                    console.log(`Content refresh completed for ${newTab}`);
+                });
+        } else {
+            console.log('No city selected, skipping content refresh.');
+        }
+    });
+
+    // Populate dropdowns and initialize
+    populateDropdowns();
+    loadQuickStats();
+    loadConsolidatedPredictions();
+    initializeMap();
+    updateMapMarkers();
+
+    // Ensure initial tab is active
+    console.log('Activating initial tab: priceTrendTab');
+    $('#priceTrendTab').tab('show');
+
+    // Initial state
+    hideDataSections();
+    $('#initialMessage').show();
+
+    // Modal cleanup
+    $('#comparisonModal').on('hidden.bs.modal', function() {
+        destroyComparisonCharts();
+        $('#comparisonResults').hide();
+        $('#comparisonError').hide();
+        $('#compareCitySelect').val(null).trigger('change');
+    });
+});
+
+// New Function: Populate Dropdowns
+async function populateDropdowns() {
+    try {
+        // Fetch districts
+        const districtRes = await fetch('/api/districts');
+        if (!districtRes.ok) throw new Error('Failed to fetch districts');
+        let districts = await districtRes.json();
+        
+        // Ensure districts is an array
+        if (!Array.isArray(districts)) {
+            console.warn('Districts response is not an array:', districts);
+            // Handle common object formats
+            if (districts && typeof districts === 'object') {
+                if (districts.districts && Array.isArray(districts.districts)) {
+                    districts = districts.districts;
+                } else if (districts.data && Array.isArray(districts.data)) {
+                    districts = districts.data;
+                } else {
+                    districts = Object.values(districts).filter(item => typeof item === 'string');
+                }
+            } else {
+                throw new Error('Districts data is not in the expected format');
+            }
+        }
+
+        // Populate district dropdown
+        $('#districtSelect').empty().append('<option></option>');
+        districts.forEach(district => {
+            $('#districtSelect').append(`<option value="${district}">${district}</option>`);
+        });
+
+        // Fetch NECC cities
+        const cityRes = await fetch('/api/cities');
+        if (!cityRes.ok) throw new Error('Failed to fetch cities');
+        let cities = await cityRes.json();
+        
+        // Ensure cities is an array
+        if (!Array.isArray(cities)) {
+            console.warn('Cities response is not an array:', cities);
+            // Handle common object formats
+            if (cities && typeof cities === 'object') {
+                if (cities.cities && Array.isArray(cities.cities)) {
+                    cities = cities.cities;
+                } else if (cities.data && Array.isArray(cities.data)) {
+                    cities = cities.data;
+                } else {
+                    cities = Object.values(cities).filter(item => typeof item === 'string');
+                }
+            } else {
+                throw new Error('Cities data is not in the expected format');
+            }
+        }
+
+        // Populate city and comparison dropdowns
+        $('#citySelect').empty().append('<option></option>');
+        $('#compareCitySelect').empty();
+        cities.forEach(city => {
+            $('#citySelect').append(`<option value="${city}">${city}</option>`);
+            $('#compareCitySelect').append(`<option value="${city}">${city}</option>`);
+        });
+
+        console.log('Dropdowns populated successfully');
+    } catch (error) {
+        console.error('Error populating dropdowns:', error);
+        $('#errorMessage').text(`Error loading dropdowns: ${error.message}`).removeClass('d-none');
+    }
+}
+
+// New Function: Load Quick Stats
+async function loadQuickStats() {
+    try {
+        const response = await fetch('/api/prices/latest/all');
+        if (!response.ok) throw new Error('Failed to fetch latest prices');
+        const prices = await response.json();
+        const validPrices = Object.values(prices)
+            .filter(data => data?.price !== null && !isNaN(data.price))
+            .map(data => data.price);
+
+        if (validPrices.length > 0) {
+            const highest = Math.max(...validPrices).toFixed(2);
+            const lowest = Math.min(...validPrices).toFixed(2);
+            const average = (validPrices.reduce((sum, val) => sum + val, 0) / validPrices.length).toFixed(2);
+            $('#highestPrice').text(`₹${highest}`);
+            $('#lowestPrice').text(`₹${lowest}`);
+            $('#avgPrice').text(`₹${average}`);
+        } else {
+            $('#highestPrice').text('N/A');
+            $('#lowestPrice').text('N/A');
+            $('#avgPrice').text('N/A');
+        }
+    } catch (error) {
+        console.error('Error loading quick stats:', error);
+        $('#highestPrice').text('Error');
+        $('#lowestPrice').text('Error');
+        $('#avgPrice').text('Error');
+    }
+}
+
+// UI Helper Functions
+function showLoading() {
+    $('#loadingIndicator').removeClass('d-none');
+    hideDataSections();
+    $('#errorMessage').addClass('d-none');
+    $('#initialMessage').addClass('d-none');
+}
+
+function hideLoading() {
+    $('#loadingIndicator').addClass('d-none');
+}
+
+function showTabLoading(tabId) {
+    $(`#${tabId.replace('Tab', 'Pane')} .tab-loading`).removeClass('d-none');
+}
+
+function hideTabLoading(tabId) {
+    $(`#${tabId.replace('Tab', 'Pane')} .tab-loading`).addClass('d-none');
+}
+
+function hideDataSections() {
+    $('#summaryCards').css('visibility', 'hidden');
+    $('#chartsAndTablesCard').css('visibility', 'hidden');
+    $('#locationInfoCard').addClass('d-none');
+}
+
+function showDataSections() {
+    $('#summaryCards').css('visibility', 'visible');
+    $('#chartsAndTablesCard').css('visibility', 'visible');
+    $('#errorMessage').addClass('d-none');
+    $('#initialMessage').addClass('d-none');
+}
+
+function displayError(message) {
+    $('#errorMessage').text(`Error: ${message}`).removeClass('d-none');
+    hideLoading();
+    hideDataSections();
+}
+
+function resetUI() {
+    $('#locationInfoBody').html('');
+    $('#latestPriceCity').text('--');
+    $('#latestPriceValue').text('₹ --');
+    $('#latestPriceDate').text('Date: --');
+    $('#nextMonthPrediction').text('₹ --');
+    $('#nextMonthPredictionDate').text('Month: --');
+    $('#nextYearPrediction').text('₹ --');
+    $('#chartsTitle').text('Data for --');
+    $('#next12MonthsTableBody').empty();
+    $('#nextCalendarYearTableBody').empty();
+    $('#next12MonthsError').addClass('d-none');
+    $('#nextCalendarYearError').addClass('d-none');
+    $('#predictionChartError').addClass('d-none');
+    $('#priceTrendChartError').addClass('d-none');
+    $('#yearlyAvgChartError').addClass('d-none');
+    $('#monthlyAvgChartError').addClass('d-none');
+    destroyCharts();
+    hideDataSections();
+    $('#initialMessage').removeClass('d-none');
+    $('#errorMessage').addClass('d-none');
+    resetDateFilter(false);
+    $('#dateRangeSelector').addClass('d-none');
+    $('#nearbyDistrictsCard').addClass('d-none');
+    $('#nearbyDistrictsContent').html('<p>Select an NECC City to see its nearest districts.</p>');
+    $('#nearbyDistrictsError').addClass('d-none');
+    // Reset to Price Trend tab
+    activeTab = 'priceTrendTab';
+    $('#priceTrendTab').tab('show');
+}
+
+// Event Handlers
+function handleDistrictSelection() {
+    const selectedDistrict = $(this).val();
+    $('#nearbyDistrictsCard').addClass('d-none');
+    if (selectedDistrict) {
+        $('#citySelect').val(null).trigger('change.select2');
+        resetDateFilter(false);
+        $('#dateRangeSelector').addClass('d-none');
+        currentView.type = 'district';
+        currentView.name = selectedDistrict;
+        showLoading();
+        fetchDistrictData(selectedDistrict).finally(() => hideLoading());
+    } else if (!currentView.name || currentView.type === 'district') {
+        resetUI();
+        currentView = { type: null, name: null, neccCity: null };
+    }
+}
+
+function handleCitySelection() {
+    const selectedCity = $(this).val();
+    if (selectedCity) {
+        $('#districtSelect').val(null).trigger('change.select2');
+        resetDateFilter(false);
+        $('#dateRangeSelector').addClass('d-none');
+        currentView.type = 'city';
+        currentView.name = selectedCity;
+        currentView.neccCity = selectedCity;
+        showLoading();
+        // Reset to Price Trend tab on city change
+        activeTab = 'priceTrendTab';
+        $('#priceTrendTab').tab('show');
+        fetchCityData(selectedCity).finally(() => hideLoading());
+    } else if (!currentView.name || currentView.type === 'city') {
+        resetUI();
+        currentView = { type: null, name: null, neccCity: null };
+    }
+}
+
+function applyDateFilter() {
+    const startDate = $('#startDateInput').val();
+    const endDate = $('#endDateInput').val();
+    if (!currentView.neccCity) return;
+    if (startDate && endDate && startDate > endDate) {
+        alert("Start date cannot be after end date.");
+        return;
+    }
+    currentStartDate = startDate || null;
+    currentEndDate = endDate || null;
+    showLoading();
+    showTabLoading(activeTab);
+    fetchAndDisplayCityDetails(currentView.neccCity, null, currentStartDate, currentEndDate)
+        .finally(() => {
+            hideLoading();
+            hideTabLoading(activeTab);
+        });
+}
+
+function resetDateFilter(refetch = true) {
+    $('#startDateInput').val('');
+    $('#endDateInput').val('');
+    currentStartDate = null;
+    currentEndDate = null;
+    if (refetch && currentView.neccCity) {
+        showLoading();
+        showTabLoading(activeTab);
+        fetchAndDisplayCityDetails(currentView.neccCity, null, null, null)
+            .finally(() => {
+                hideLoading();
+                hideTabLoading(activeTab);
+            });
+    } else {
+        $('#dateRangeSelector').addClass('d-none');
+    }
+}
+
+// Data Fetching
+async function fetchDistrictData(districtName) {
+    try {
+        const response = await fetch(`/api/district_price/${encodeURIComponent(districtName)}`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        currentView.neccCity = data.nearest_necc_city;
+        updateLocationInfo(data);
+        if (data.nearest_necc_city) {
+            await fetchAndDisplayCityDetails(data.nearest_necc_city, data);
+        } else {
+            displayError(`Could not find NECC city mapping for ${districtName}.`);
+        }
+    } catch (error) {
+        console.error('Error fetching district data:', error);
+        displayError(`Failed to load data for ${districtName}. ${error.message}`);
+        currentView = { type: null, name: null, neccCity: null };
+    }
+}
+
+async function fetchCityData(cityName) {
+    try {
+        currentView.neccCity = cityName;
+        $('#locationInfoCard').addClass('d-none');
+        await fetchAndDisplayCityDetails(cityName);
+    } catch (error) {
+        console.error('Error fetching city data:', error);
+        displayError(`Failed to load data for ${cityName}. ${error.message}`);
+        currentView = { type: null, name: null, neccCity: null };
+    }
+}
+
+async function fetchAndDisplayCityDetails(cityName, districtData = null, startDate = null, endDate = null) {
+    try {
+        let historicalApiUrl = `/api/historical/${encodeURIComponent(cityName)}`;
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+        if (params.toString()) historicalApiUrl += `?${params.toString()}`;
+
+        const [historicalRes, predictionRes] = await Promise.all([
+            fetch(historicalApiUrl),
+            fetch(`/api/predict/${encodeURIComponent(cityName)}`)
+        ]);
+
+        if (!historicalRes.ok) throw new Error(`Historical data error: ${(await historicalRes.json()).error}`);
+        if (!predictionRes.ok) throw new Error(`Prediction data error: ${(await predictionRes.json()).error}`);
+
+        const historicalData = await historicalRes.json();
+        const predictionData = await predictionRes.json();
+
+        displayNearbyDistrictsInCard(cityName);
+        updateSummaryCards(historicalData, predictionData, districtData);
+        updateChartsAndTables(historicalData, predictionData);
+        updateChartsTitle(cityName, districtData ? districtData.district : null);
+        $('#dateRangeSelector').removeClass('d-none');
+        $('#startDateInput').val(historicalData.query_start_date || '');
+        $('#endDateInput').val(historicalData.query_end_date || '');
+        showDataSections();
+    } catch (error) {
+        console.error(`Error fetching details for ${cityName}:`, error);
+        displayError(`Failed to load detailed data for ${cityName}. ${error.message}`);
+        $('#dateRangeSelector').addClass('d-none');
+        $('#nearbyDistrictsCard').addClass('d-none');
+    }
+}
+
+async function loadConsolidatedPredictions() {
+    const tableBody = $('#consolidatedTableBody');
+    const loadingDiv = $('#consolidatedLoading');
+    const errorDiv = $('#consolidatedError');
+    const tableContainer = $('#consolidatedTableContainer');
+    const yearSpan = $('#consolidatedCalendarYear');
+    const yearTableSpan = $('#consolidatedCalendarYearTable');
+
+    tableBody.empty();
+    errorDiv.addClass('d-none');
+    tableContainer.addClass('d-none');
+    loadingDiv.removeClass('d-none');
+    $('#refreshConsolidatedBtn').prop('disabled', true);
+
+    try {
+        const response = await fetch('/api/predictions/all');
+        if (!response.ok) throw new Error((await response.json()).error || `HTTP error! Status: ${response.status}`);
+        consolidatedData = await response.json();
+
+        if (consolidatedData.length > 0) {
+            const firstValidEntry = consolidatedData.find(d => d.calendar_year);
+            const year = firstValidEntry ? firstValidEntry.calendar_year : 'Year';
+            yearSpan.text(year);
+            yearTableSpan.text(year);
+            consolidatedData.forEach(cityData => {
+                const avg12m = cityData.avg_next_12_months !== null ? `₹ ${cityData.avg_next_12_months.toFixed(2)}` : '--';
+                const avgCalYear = cityData.avg_next_calendar_year !== null ? `₹ ${cityData.avg_next_calendar_year.toFixed(2)}` : '--';
+                tableBody.append(`<tr><td>${cityData.city}</td><td>${avg12m}</td><td>${avgCalYear}</td></tr>`);
+            });
+            tableContainer.removeClass('d-none');
+        } else {
+            errorDiv.text('No prediction summary data available.').removeClass('d-none');
+        }
+    } catch (error) {
+        console.error('Error fetching consolidated predictions:', error);
+        errorDiv.text(`Failed to load summary: ${error.message}`).removeClass('d-none');
+    } finally {
+        loadingDiv.addClass('d-none');
+        $('#refreshConsolidatedBtn').prop('disabled', false);
+    }
+}
+
+// UI Update Functions
+function updateLocationInfo(data) {
+    if (currentView.type === 'district') {
+        const infoHtml = `
+            <p><strong>District:</strong> ${data.district}</p>
+            <p><strong>Nearest NECC City:</strong> ${data.nearest_necc_city || 'N/A'}</p>
+            <p><strong>Distance:</strong> ${data.distance_km !== null ? data.distance_km + ' km' : 'N/A'}</p>
+            <small class="text-muted">Prices and predictions shown below are based on ${data.nearest_necc_city || 'the nearest NECC city'}.</small>
+        `;
+        $('#locationInfoBody').html(infoHtml);
+        $('#locationInfoCard').removeClass('d-none');
+    } else {
+        $('#locationInfoCard').addClass('d-none');
+    }
+}
+
+function updateSummaryCards(historicalData, predictionData, districtData) {
+    const cityForResult = currentView.neccCity;
+    const latestPrice = historicalData?.daily?.prices?.slice(-1)[0];
+    const latestDate = historicalData?.daily?.dates?.slice(-1)[0];
+
+    $('#latestPriceCity').text(cityForResult || '--');
+    $('#latestPriceValue').text(latestPrice !== undefined ? `₹ ${latestPrice.toFixed(2)}` : '₹ --');
+    $('#latestPriceDate').text(latestDate ? `Date: ${formatDisplayDate(latestDate)}` : 'Date: --');
+
+    const next12Pred = predictionData?.predictions?.next_12_months;
+    if (next12Pred && next12Pred.prices?.length > 0) {
+        const nextMonthPrice = next12Pred.prices[0];
+        const nextMonthDate = next12Pred.dates[0];
+        const avg12M = next12Pred.prices.reduce((a, b) => a + b, 0) / next12Pred.prices.length;
+        $('#nextMonthPrediction').html(`₹ ${nextMonthPrice.toFixed(2)}<br><small class="text-muted">Avg (Next 12M): ₹ ${avg12M.toFixed(2)}</small>`);
+        $('#nextMonthPredictionDate').text(nextMonthDate ? `Month: ${formatDisplayMonthYear(nextMonthDate)}` : 'Month: --');
+    } else {
+        $('#nextMonthPrediction').text('₹ --');
+        $('#nextMonthPredictionDate').text('Month: --');
+    }
+
+    const nextYearPred = predictionData?.predictions?.next_calendar_year;
+    if (nextYearPred && nextYearPred.prices?.length > 0) {
+        const avgPrice = nextYearPred.prices.reduce((a, b) => a + b, 0) / nextYearPred.prices.length;
+        const year = nextYearPred.dates[0] ? new Date(nextYearPred.dates[0]).getFullYear() : '--';
+        $('#nextYearPrediction').text(`₹ ${avgPrice.toFixed(2)}`);
+        $('#nextYearText').text(` ${year}`);
+        $('#predCalendarYear').text(year);
+    } else {
+        $('#nextYearPrediction').text('₹ --');
+        $('#nextYearText').text('--');
+        $('#predCalendarYear').text('--');
+    }
+}
+
+function updateChartsTitle(cityName, districtName) {
+    $('#chartsTitle').text(districtName ? `Data for ${districtName} (Based on ${cityName})` : `Data for ${cityName}`);
+}
+
+function updateChartsAndTables(historicalData, predictionData) {
+    destroyCharts();
+    console.log(`Updating charts for tab: ${activeTab}`);
+    populatePredictionTable('next12MonthsTableBody', 'next12MonthsError', predictionData?.predictions?.next_12_months);
+    populatePredictionTable('nextCalendarYearTableBody', 'nextCalendarYearError', predictionData?.predictions?.next_calendar_year);
+
+    // Render only the chart for the active tab
+    switch (activeTab) {
+        case 'priceTrendTab':
+            createPriceTrendChart(historicalData);
+            break;
+        case 'predictionsTab':
+            createPredictionChart(historicalData, predictionData);
+            break;
+        case 'averagesTab':
+            createAveragesCharts(historicalData);
+            break;
+        default:
+            console.warn(`Unknown tab: ${activeTab}`);
+    }
+}
+
+function populatePredictionTable(tableBodyId, errorDivId, predictionSet) {
+    const tableBody = $(`#${tableBodyId}`);
+    const errorDiv = $(`#${errorDivId}`);
+    tableBody.empty();
+    errorDiv.addClass('d-none');
+
+    if (predictionSet && predictionSet.dates?.length > 0) {
+        predictionSet.dates.forEach((date, index) => {
+            const price = predictionSet.prices[index];
+            tableBody.append(`<tr><td>${formatDisplayMonthYear(date)}</td><td>₹ ${price.toFixed(2)}</td></tr>`);
+        });
+    } else {
+        errorDiv.text('Prediction data not available for this period.').removeClass('d-none');
+        tableBody.append('<tr><td colspan="2" class="text-muted text-center">No data</td></tr>');
+    }
+}
+
+// Chart Functions
+function destroyCharts() {
+    if (priceTrendChart) {
+        priceTrendChart.destroy();
+        priceTrendChart = null;
+    }
+    if (predictionChart) {
+        predictionChart.destroy();
+        predictionChart = null;
+    }
+    if (yearlyAvgChart) {
+        yearlyAvgChart.destroy();
+        yearlyAvgChart = null;
+    }
+    if (monthlyAvgChart) {
+        monthlyAvgChart.destroy();
+        monthlyAvgChart = null;
+    }
+    console.log('All charts destroyed.');
+}
+
+function isChartDataValid(data) {
+    return data && Array.isArray(data.dates) && Array.isArray(data.prices) && data.dates.length > 0 && data.dates.length === data.prices.length;
+}
+
+function createPriceTrendChart(historicalData) {
+    const ctx = document.getElementById('priceTrendChart')?.getContext('2d');
+    const errorDiv = $('#priceTrendChartError');
+    if (!ctx) {
+        console.error('Price Trend Chart canvas not found');
+        errorDiv.text('Chart rendering error: Canvas not found.').removeClass('d-none');
+        return;
+    }
+
+    if (window.priceTrendChart instanceof Chart) window.priceTrendChart.destroy();
+    errorDiv.addClass('d-none');
+
+    const monthlyDataValid = historicalData?.monthly && isChartDataValid(historicalData.monthly);
+
+    if (!monthlyDataValid) {
+        errorDiv.text('No valid monthly data available.').removeClass('d-none');
+        console.warn('Price Trend Chart: No valid monthly data.');
+        return;
+    }
+
+    const datasets = [{
+        label: 'Monthly Average Price',
+        data: historicalData.monthly.dates.map((date, index) => ({x: date, y: historicalData.monthly.prices[index]})),
+        borderColor: 'rgb(28, 200, 138)',
+        backgroundColor: 'rgba(28, 200, 138, 0.1)',
+        borderWidth: 3,
+        pointRadius: 1.5,
+        yAxisID: 'y',
+        tension: 0.1
+    }];
+
+    try {
+        window.priceTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            plugins: [{
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 2;
+                },
+                afterDraw: (chart) => {
+                    chart.ctx.restore();
+                }
+            }],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'time', time: { unit: 'year', tooltipFormat: 'MMM YYYY', displayFormats: { month: 'MMM YYYY', year: 'YYYY' } }, title: { display: true, text: 'Date' } },
+                    y: { beginAtZero: false, title: { display: true, text: 'Price (₹)' }, ticks: { callback: value => '₹' + value.toFixed(2) } }
+                },
+                plugins: {
+                    tooltip: { mode: 'index', intersect: false, callbacks: { label: context => `Price: ₹${context.parsed.y.toFixed(2)}` } },
+                    legend: { position: 'top' },
+                    title: { display: true, text: `Monthly Average Egg Prices for ${currentView.neccCity}` }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+            }
+        });
+        console.log('Price Trend Chart created successfully.');
+    } catch (err) {
+        console.error(`Error creating Price Trend Chart: ${err.message}`);
+        errorDiv.text('Error rendering chart.').removeClass('d-none');
+    }
+}
+
+function createPredictionChart(historicalData, predictionData) {
+    const ctx = document.getElementById('predictionChart')?.getContext('2d');
+    const errorDiv = $('#predictionChartError');
+    if (!ctx) {
+        console.error('Prediction Chart canvas not found');
+        errorDiv.text('Chart rendering error: Canvas not found.').removeClass('d-none');
+        return;
+    }
+
+    if (window.predictionChart instanceof Chart) window.predictionChart.destroy();
+    errorDiv.addClass('d-none');
+
+    const datasets = [];
+    const monthlyDataValid = historicalData?.monthly && isChartDataValid(historicalData.monthly);
+    const predYearDataValid = predictionData?.predictions?.next_calendar_year && isChartDataValid(predictionData.predictions.next_calendar_year);
+
+    if (!monthlyDataValid && !predYearDataValid) {
+        console.warn('Prediction Chart: No valid historical or prediction data.');
+        errorDiv.text('No data available for predictions.').removeClass('d-none');
+        return;
+    }
+
+    if (monthlyDataValid) {
+        // Limit historical data to last 5 years for clarity
+        const fiveYearsAgo = moment().subtract(5, 'years').startOf('month');
+        const filteredHistDates = historicalData.monthly.dates.filter(d => moment(d).isSameOrAfter(fiveYearsAgo));
+        const filteredHistPrices = historicalData.monthly.prices.slice(-filteredHistDates.length);
+        
+        if (filteredHistDates.length > 0) {
+            datasets.push({
+                label: 'Historical Monthly Avg',
+                data: filteredHistDates.map((date, index) => ({ x: date, y: filteredHistPrices[index] })),
+                borderColor: 'rgb(78, 115, 223)',
+                borderWidth: 2,
+                pointRadius: 1.5,
+                fill: false,
+                tension: 0.1
+            });
+        } else {
+            console.warn('Prediction Chart: No historical data within last 5 years.');
+        }
+    }
+
+    if (predYearDataValid) {
+        const year = predictionData.predictions.next_calendar_year.dates[0] 
+            ? new Date(predictionData.predictions.next_calendar_year.dates[0]).getFullYear() 
+            : 'Next Year';
+        datasets.push({
+            label: `Predicted (${year})`,
+            data: predictionData.predictions.next_calendar_year.dates.map((date, index) => ({
+                x: date,
+                y: predictionData.predictions.next_calendar_year.prices[index]
+            })),
+            borderColor: 'rgb(231, 74, 59)',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: 'rgb(231, 74, 59)',
+            fill: false,
+            tension: 0.1
+        });
+    }
+
+    if (datasets.length === 0) {
+        console.warn('Prediction Chart: No datasets created.');
+        errorDiv.text('Insufficient data to render prediction chart.').removeClass('d-none');
+        return;
+    }
+
+    try {
+        window.predictionChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            plugins: [{
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 2;
+                },
+                afterDraw: (chart) => {
+                    chart.ctx.restore();
+                }
+            }],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                        type: 'time', 
+                        time: { 
+                            unit: 'month', 
+                            tooltipFormat: 'MMM YYYY', 
+                            displayFormats: { month: 'MMM YYYY', year: 'YYYY' } 
+                        }, 
+                        title: { display: true, text: 'Month' } 
+                    },
+                    y: { 
+                        beginAtZero: false, 
+                        title: { display: true, text: 'Price (₹)' }, 
+                        ticks: { callback: value => '₹' + value.toFixed(2) } 
+                    }
+                },
+                plugins: {
+                    tooltip: { 
+                        mode: 'index', 
+                        intersect: false, 
+                        callbacks: { 
+                            label: context => `${context.dataset.label}: ₹${context.parsed.y.toFixed(2)}` 
+                        } 
+                    },
+                    legend: { position: 'top' },
+                    title: { display: true, text: `Price Trends and Predictions for ${currentView.neccCity}` }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+            }
+        });
+        console.log('Prediction Chart created successfully.');
+    } catch (err) {
+        console.error(`Error creating Prediction Chart: ${err.message}`);
+        errorDiv.text('Error rendering prediction chart.').removeClass('d-none');
+    }
+}
+
+function createAveragesCharts(historicalData) {
+    const yearlyCtx = document.getElementById('yearlyAvgChart')?.getContext('2d');
+    const monthlyCtx = document.getElementById('monthlyAvgChart')?.getContext('2d');
+    const yearlyTableBody = $('#yearlyAvgTableBody');
+    const yearlyTableErrorDiv = $('#yearlyAvgTableError');
+    const yearlyChartErrorDiv = $('#yearlyAvgChartError');
+    const monthlyChartErrorDiv = $('#monthlyAvgChartError');
+    yearlyTableBody.empty();
+    yearlyTableErrorDiv.addClass('d-none');
+    yearlyChartErrorDiv.addClass('d-none');
+    monthlyChartErrorDiv.addClass('d-none');
+
+    if (window.yearlyAvgChart instanceof Chart) window.yearlyAvgChart.destroy();
+    if (window.monthlyAvgChart instanceof Chart) window.monthlyAvgChart.destroy();
+
+    // Yearly Averages Chart and Table
+    const yearlyDataValid = historicalData?.yearly && isChartDataValid(historicalData.yearly);
+    if (yearlyCtx && yearlyDataValid) {
+        const gradient = yearlyCtx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+        gradient.addColorStop(1, 'rgba(54, 162, 235, 0.4)');
+
+        try {
+            window.yearlyAvgChart = new Chart(yearlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: historicalData.yearly.dates,
+                    datasets: [{
+                        label: 'Yearly Average Price',
+                        data: historicalData.yearly.prices,
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                plugins: [{
+                    beforeDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                        ctx.shadowBlur = 6;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 2;
+                    },
+                    afterDraw: (chart) => {
+                        chart.ctx.restore();
+                    }
+                }],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Year' } },
+                        y: { 
+                            beginAtZero: false, 
+                            title: { display: true, text: 'Avg Price (₹)' }, 
+                            ticks: { callback: value => '₹' + value.toFixed(2) }
+                        }
+                    },
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { callbacks: { label: context => `Avg Price: ₹${context.parsed.y.toFixed(2)}` } }
+                    }
+                }
+            });
+            console.log('Yearly Average Chart created successfully.');
+        } catch (err) {
+            console.error(`Error creating Yearly Average Chart: ${err.message}`);
+            yearlyChartErrorDiv.text('Error rendering yearly chart.').removeClass('d-none');
+        }
+
+        historicalData.yearly.dates.forEach((year, index) => {
+            const price = historicalData.yearly.prices[index];
+            const priceText = price !== null && !isNaN(price) ? `₹ ${price.toFixed(2)}` : 'N/A';
+            yearlyTableBody.append(`<tr><td>${year}</td><td>${priceText}</td></tr>`);
+        });
+    } else {
+        console.warn('Yearly Average Chart: No valid data.');
+        yearlyChartErrorDiv.text('No yearly average data available.').removeClass('d-none');
+        yearlyTableErrorDiv.text('Yearly average data not available.').removeClass('d-none');
+        yearlyTableBody.append('<tr><td colspan="2" class="text-muted text-center">No data</td></tr>');
+    }
+
+    // Monthly Averages Chart
+    const monthlyDataValid = historicalData?.monthly && isChartDataValid(historicalData.monthly);
+    if (monthlyCtx && monthlyDataValid) {
+        // Use all available monthly data (remove strict 5-year limit for flexibility)
+        const monthlyDates = historicalData.monthly.dates;
+        const monthlyPrices = historicalData.monthly.prices;
+
+        if (monthlyDates.length > 0) {
+            const gradient = monthlyCtx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(28, 200, 138, 0.3)');
+            gradient.addColorStop(1, 'rgba(28, 200, 138, 0)');
+
+            try {
+                window.monthlyAvgChart = new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: monthlyDates.map(d => formatDisplayMonthYear(d)),
+                        datasets: [{
+                            label: 'Monthly Average Price',
+                            data: monthlyPrices,
+                            borderColor: 'rgb(28, 200, 138)',
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.1,
+                            borderWidth: 3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(28, 200, 138)',
+                            spanGaps: true
+                        }]
+                    },
+                    plugins: [{
+                        beforeDraw: (chart) => {
+                            const ctx = chart.ctx;
+                            ctx.save();
+                            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                            ctx.shadowBlur = 6;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 2;
+                        },
+                        afterDraw: (chart) => {
+                            chart.ctx.restore();
+                        }
+                    }],
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: false } },
+                            y: { 
+                                beginAtZero: false, 
+                                title: { display: true, text: 'Avg Price (₹)' }, 
+                                ticks: { callback: value => '₹' + value.toFixed(2) }
+                            }
+                        },
+                        plugins: { 
+                            legend: { display: false }, 
+                            tooltip: { callbacks: { label: context => `Avg Price: ₹${context.parsed.y.toFixed(2)}` } }
+                        }
+                    }
+                });
+                console.log('Monthly Average Chart created successfully.');
+            } catch (err) {
+                console.error(`Error creating Monthly Average Chart: ${err.message}`);
+                monthlyChartErrorDiv.text('Error rendering monthly chart.').removeClass('d-none');
+            }
+        } else {
+            console.warn('Monthly Average Chart: No monthly data available.');
+            monthlyChartErrorDiv.text('No monthly average data available.').removeClass('d-none');
+        }
+    } else {
+        console.warn('Monthly Average Chart: No valid data.');
+        monthlyChartErrorDiv.text('No monthly average data available.').removeClass('d-none');
+    }
+}
+
+// Map Functions
+function initializeMap() {
+    if (priceMap) priceMap.remove();
+    const indiaBounds = L.latLngBounds(L.latLng(6.0, 67.0), L.latLng(36.0, 98.0));
+    priceMap = L.map('mapid', { maxBounds: indiaBounds }).setView([22.5, 78.9], 5);
+    priceMap.setMinZoom(5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(priceMap);
+    mapMarkersLayer = L.layerGroup().addTo(priceMap);
+    priceMap.on('popupclose', clearMapHighlights);
+    $('#mapError').addClass('d-none');
+}
+
+async function updateMapMarkers() {
+    const loadingDiv = $('#mapLoading');
+    const errorDiv = $('#mapError');
+    const legendDiv = $('#mapLegend');
+    loadingDiv.removeClass('d-none');
+    errorDiv.addClass('d-none');
+    legendDiv.html('Loading...');
+    $('#refreshMapBtn').prop('disabled', true);
+
+    if (!priceMap || !mapMarkersLayer) {
+        initializeMap();
+    }
+
+    mapMarkersLayer.clearLayers();
+    allMarkers = {};
+    activeLines = [];
+    activeHighlights = [];
+
+    try {
+        const priceResponse = await fetch('/api/prices/latest/all');
+        if (!priceResponse.ok) throw new Error(`Fetch prices failed (${priceResponse.status})`);
+        const latestPrices = await priceResponse.json();
+        const { q1, q2, q3 } = calculatePriceQuartiles(latestPrices);
+
+        plotDistrictMarkers();
+        plotNeccCityMarkers(latestPrices, q1, q2, q3);
+        updateMapLegend(q1, q2, q3);
+    } catch (error) {
+        console.error('Error updating map markers:', error);
+        errorDiv.text(`Failed to load map data: ${error.message}`).removeClass('d-none');
+        legendDiv.html('Error.');
+    } finally {
+        loadingDiv.addClass('d-none');
+        $('#refreshMapBtn').prop('disabled', false);
+    }
+}
+
+function calculatePriceQuartiles(latestPrices) {
+    const validPrices = Object.values(latestPrices)
+        .filter(data => data?.price !== null && !isNaN(data.price))
+        .map(data => data.price);
+    if (validPrices.length < 4) return { q1: NaN, q2: NaN, q3: NaN };
+    validPrices.sort((a, b) => a - b);
+    return {
+        q1: percentile(validPrices, 25),
+        q2: percentile(validPrices, 50),
+        q3: percentile(validPrices, 75)
+    };
+}
+
+function plotDistrictMarkers() {
+    const districtIcon = L.divIcon({ className: 'district-marker-icon', iconSize: [8, 8] });
+    for (const districtName in districtCoordinates) {
+        const coords = districtCoordinates[districtName];
+        if (isValidCoords(coords)) {
+            const marker = L.marker([coords.lat, coords.lon], {
+                icon: districtIcon,
+                zIndexOffset: 100,
+                districtName
+            })
+            .addTo(mapMarkersLayer)
+            .bindTooltip(districtName)
+            .bindPopup(`Loading info for ${districtName}...`, { offset: [30, -30] })
+            .on('popupopen', (e) => handleDistrictPopupOpen(e, districtName));
+            allMarkers[districtName] = marker;
+        }
+    }
+}
+
+function plotNeccCityMarkers(latestPrices, q1, q2, q3) {
+    for (const cityName in neccCityCoordinates) {
+        const coords = neccCityCoordinates[cityName];
+        if (!isValidCoords(coords)) continue;
+
+        const priceData = latestPrices[cityName];
+        let markerColor = '#808080';
+        let priceText = 'N/A';
+        if (priceData && priceData.price !== null && !isNaN(priceData.price)) {
+            const price = priceData.price;
+            priceText = `₹ ${price.toFixed(2)}`;
+            if (!isNaN(q1)) {
+                markerColor = price <= q1 ? '#1cc88a' : price <= q2 ? '#f6c23e' : price <= q3 ? '#fd7e14' : '#e74a3b';
+            }
+        }
+
+        const neccIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style='background-color:${markerColor};' class='marker-pin'></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+            popupAnchor: [30, -30]
+        });
+
+        const marker = L.marker([coords.lat, coords.lon], {
+            icon: neccIcon,
+            zIndexOffset: 1000,
+            neccCityName: cityName
+        })
+        .addTo(mapMarkersLayer)
+        .bindTooltip(`${cityName}: ${priceText}`)
+        .bindPopup(`Loading info for ${cityName}...`, { offset: [30, -30] })
+        .on('popupopen', (e) => handleNeccPopupOpen(e, cityName));
+        allMarkers[cityName] = marker;
+    }
+}
+
+function handleNeccPopupOpen(e, cityName) {
+    const marker = e.target;
+    const popup = marker.getPopup();
+    clearMapHighlights();
+    if (marker._icon) {
+        marker._icon.classList.add('highlighted-necc');
+        activeHighlights.push(marker._icon);
+    }
+
+    const priceText = marker.getTooltip()?.getContent().split(': ')[1] || 'N/A';
+    popup.setContent(`
+        <div class="popup-city-title">${cityName}</div>
+        <p><strong>Price:</strong> ${priceText}</p>
+        <div id="nearby-loading" class="text-center small my-1"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</div>
+        <button class="btn btn-sm btn-primary load-dashboard-btn" data-city="${cityName}">View Dashboard</button>
+    `);
+
+    fetch(`/api/necc_nearby_districts/${encodeURIComponent(cityName)}`)
+        .then(response => response.ok ? response.json() : Promise.reject((response.json()).error || `HTTP ${response.status}`))
+        .then(nearbyDistricts => {
+            let districtListHtml = '<p class="mb-1"><strong>Nearby Districts:</strong></p><ul class="list-unstyled mb-2 small">';
+            const nearbyDistrictNames = [];
+            if (nearbyDistricts?.length > 0) {
+                nearbyDistricts.forEach(d => {
+                    districtListHtml += `<li>${d.rank}. ${d.district} (${d.distance} km)</li>`;
+                    nearbyDistrictNames.push(d.district);
+                });
+            } else {
+                districtListHtml += '<li>None found.</li>';
+            }
+            districtListHtml += '</ul>';
+
+            popup.setContent(`
+                <div class="popup-city-title">${cityName}</div>
+                <p><strong>Price:</strong> ${priceText}</p>
+                ${districtListHtml}
+                <button class="btn btn-sm btn-primary load-dashboard-btn" data-city="${cityName}">View Dashboard</button>
+            `);
+
+            highlightNearbyDistricts(cityName, nearbyDistrictNames);
+        })
+        .catch(error => {
+            popup.setContent(`
+                <div class="popup-city-title">${cityName}</div>
+                <p><strong>Price:</strong> ${priceText}</p>
+                <p class="text-danger small my-1">Error: ${error}</p>
+                <button class="btn btn-sm btn-primary load-dashboard-btn" data-city="${cityName}">View Dashboard</button>
+            `);
+        });
+}
+
+function handleDistrictPopupOpen(e, districtName) {
+    const marker = e.target;
+    const popup = marker.getPopup();
+    clearMapHighlights();
+    if (marker._icon) {
+        marker._icon.classList.add('highlighted-district');
+        activeHighlights.push(marker._icon);
+    }
+
+    popup.setContent(`
+        <div class="popup-city-title">${districtName}</div>
+        <div id="necc-loading" class="text-center small my-1"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</div>
+    `);
+
+    fetch(`/api/district_price/${encodeURIComponent(districtName)}`)
+        .then(response => response.ok ? response.json() : Promise.reject((response.json()).error || `HTTP ${response.status}`))
+        .then(data => {
+            let neccInfoHtml = '';
+            let buttonHtml = '';
+            if (data?.nearest_necc_city) {
+                const priceText = data.latest_price?.price !== null ? `₹ ${data.latest_price.price.toFixed(2)}` : 'N/A';
+                const dateText = data.latest_price?.date ? formatDisplayDate(data.latest_price.date) : '--';
+                neccInfoHtml = `
+                    <p><strong>NECC City:</strong> ${data.nearest_necc_city}</p>
+                    <p><strong>Distance:</strong> ${data.distance_km !== null ? data.distance_km + ' km' : 'N/A'}</p>
+                    <p><strong>Price:</strong> ${priceText} <small>(${dateText})</small></p>
+                `;
+                buttonHtml = `<button class="btn btn-sm btn-info load-necc-dashboard-btn mt-2" data-city="${data.nearest_necc_city}">View Details</button>`;
+                highlightNearestNecc(districtName, data.nearest_necc_city);
+            } else {
+                neccInfoHtml = `<p class="text-warning small">${data.error || 'NECC city info not available.'}</p>`;
+            }
+            popup.setContent(`
+                <div class="popup-city-title">${districtName}</div>
+                ${neccInfoHtml}
+                ${buttonHtml}
+            `);
+        })
+        .catch(error => {
+            popup.setContent(`
+                <div class="popup-city-title">${districtName}</div>
+                <p class="text-danger small">Error: ${error}</p>
+            `);
+        });
+}
+
+function highlightNearbyDistricts(neccCityName, nearbyDistrictNames) {
+    const neccCoords = neccCityCoordinates[neccCityName];
+    if (!isValidCoords(neccCoords)) return;
+
+    nearbyDistrictNames.forEach(districtName => {
+        const marker = allMarkers[districtName];
+        const distCoords = districtCoordinates[districtName];
+        if (marker?._icon && isValidCoords(distCoords)) {
+            marker._icon.classList.add('highlighted-district');
+            activeHighlights.push(marker._icon);
+            const line = L.polyline([[neccCoords.lat, neccCoords.lon], [distCoords.lat, distCoords.lon]], {
+                color: '#0d6efd',
+                weight: 1,
+                opacity: 0.6,
+                dashArray: '5, 5'
+            }).addTo(mapMarkersLayer);
+            activeLines.push(line);
+        }
+    });
+}
+
+function highlightNearestNecc(districtName, nearestNeccCityName) {
+    const distCoords = districtCoordinates[districtName];
+    if (!isValidCoords(distCoords)) return;
+
+    const neccMarker = allMarkers[nearestNeccCityName];
+    const neccCoords = neccCityCoordinates[nearestNeccCityName];
+    if (neccMarker?._icon && isValidCoords(neccCoords)) {
+        neccMarker._icon.classList.add('highlighted-necc');
+        activeHighlights.push(neccMarker._icon);
+        const line = L.polyline([[distCoords.lat, distCoords.lon], [neccCoords.lat, neccCoords.lon]], {
+            color: '#198754',
+            weight: 2,
+            opacity: 0.8
+        }).addTo(mapMarkersLayer);
+        activeLines.push(line);
+    }
+}
+
+function clearMapHighlights() {
+    activeHighlights.forEach(icon => {
+        if (icon) {
+            icon.classList.remove('highlighted-necc', 'highlighted-district');
+        }
+    });
+    activeLines.forEach(line => mapMarkersLayer.removeLayer(line));
+    activeHighlights = [];
+    activeLines = [];
+}
+
+function updateMapLegend(q1, q2, q3) {
+    const legendDiv = $('#mapLegend');
+    if (isNaN(q1) || isNaN(q2) || isNaN(q3)) {
+        legendDiv.html('<span class="text-muted">Price data unavailable.</span>');
+        return;
+    }
+    legendDiv.html(`
+        <p><strong>Latest Price Quartiles:</strong></p>
+        <p><span style="background-color: #1cc88a;"></span> Low (≤ ₹${q1.toFixed(2)})</p>
+        <p><span style="background-color: #f6c23e;"></span> Lower-Mid (≤ ₹${q2.toFixed(2)})</p>
+        <p><span style="background-color: #fd7e14;"></span> Upper-Mid (≤ ₹${q3.toFixed(2)})</p>
+        <p><span style="background-color: #e74a3b;"></span> High (> ₹${q3.toFixed(2)})</p>
+        <p><span class="district-legend-dot"></span> District</p>
+    `);
+}
+
+async function displayNearbyDistrictsInCard(cityName) {
+    const contentDiv = $('#nearbyDistrictsContent');
+    const loadingDiv = $('#nearbyDistrictsLoading');
+    const errorDiv = $('#nearbyDistrictsError');
+    contentDiv.empty();
+    errorDiv.addClass('d-none');
+    loadingDiv.removeClass('d-none');
+    $('#nearbyDistrictsCard').removeClass('d-none');
+
+    try {
+        const response = await fetch(`/api/necc_nearby_districts/${encodeURIComponent(cityName)}`);
+        if (!response.ok) throw new Error((await response.json()).error || `HTTP ${response.status}`);
+        const nearbyDistricts = await response.json();
+
+        if (nearbyDistricts.length > 0) {
+            let districtListHtml = '<ul class="list-unstyled">';
+            nearbyDistricts.forEach(d => {
+                districtListHtml += `<li>${d.rank}. ${d.district} (${d.distance} km)</li>`;
+            });
+            districtListHtml += '</ul>';
+            contentDiv.html(districtListHtml);
+        } else {
+            contentDiv.html('<p class="text-muted">No nearby districts found.</p>');
+        }
+    } catch (error) {
+        console.error(`Error fetching nearby districts for ${cityName}:`, error);
+        errorDiv.text(`Failed to load nearby districts: ${error.message}`).removeClass('d-none');
+        contentDiv.html('<p class="text-muted">No data available.</p>');
+    } finally {
+        loadingDiv.addClass('d-none');
+    }
+}
+
+// Comparison Modal Functions
+async function generateComparison() {
+    const selectedCities = $('#compareCitySelect').val();
+    const loadingDiv = $('#comparisonLoading');
+    const errorDiv = $('#comparisonError');
+    const resultsDiv = $('#comparisonResults');
+    const tableBody = $('#comparisonTableBody');
+
+    if (!selectedCities || selectedCities.length < 2 || selectedCities.length > MAX_COMPARE_CITIES) {
+        errorDiv.text('Please select 2 to 4 cities for comparison.').removeClass('d-none');
+        resultsDiv.addClass('d-none');
+        return;
+    }
+
+    loadingDiv.removeClass('d-none');
+    errorDiv.addClass('d-none');
+    resultsDiv.addClass('d-none');
+    tableBody.empty();
+    destroyComparisonCharts();
+
+    try {
+        const historicalPromises = selectedCities.map(city => 
+            fetch(`/api/historical/${encodeURIComponent(city)}`).then(res => res.ok ? res.json() : Promise.reject(`Historical data for ${city}: ${res.status}`))
+        );
+        const predictionPromises = selectedCities.map(city => 
+            fetch(`/api/predict/${encodeURIComponent(city)}`).then(res => res.ok ? res.json() : Promise.reject(`Prediction data for ${city}: ${res.status}`))
+        );
+
+        const [historicalResults, predictionResults] = await Promise.all([
+            Promise.all(historicalPromises),
+            Promise.all(predictionPromises)
+        ]);
+
+        createComparisonTrendChart(historicalResults, selectedCities);
+        createComparisonPredictionChart(predictionResults, selectedCities);
+        populateComparisonTable(historicalResults, predictionResults, selectedCities);
+
+        resultsDiv.removeClass('d-none');
+    } catch (error) {
+        console.error('Error generating comparison:', error);
+        errorDiv.text(`Failed to load comparison: ${error}`).removeClass('d-none');
+    } finally {
+        loadingDiv.addClass('d-none');
+    }
+}
+
+function createComparisonTrendChart(historicalResults, cities) {
+    const ctx = document.getElementById('comparisonTrendChart')?.getContext('2d');
+    const errorDiv = $('#comparisonError');
+    if (!ctx) {
+        console.error('Comparison Trend Chart canvas not found');
+        errorDiv.text('Chart rendering error: Canvas not found.').removeClass('d-none');
+        return;
+    }
+
+    if (comparisonTrendChart) comparisonTrendChart.destroy();
+    errorDiv.addClass('d-none');
+
+    const datasets = historicalResults.map((data, index) => {
+        const monthlyDataValid = data?.monthly && isChartDataValid(data.monthly);
+        if (!monthlyDataValid) {
+            console.warn(`Comparison Trend Chart: No valid monthly data for ${cities[index]}`);
+            return null;
+        }
+        // Limit to last 5 years for consistency
+        const fiveYearsAgo = moment().subtract(5, 'years').startOf('month');
+        const filteredDates = data.monthly.dates.filter(d => moment(d).isSameOrAfter(fiveYearsAgo));
+        const filteredPrices = data.monthly.prices.slice(-filteredDates.length);
+        
+        if (filteredDates.length === 0) {
+            console.warn(`Comparison Trend Chart: No recent data for ${cities[index]}`);
+            return null;
+        }
+
+        return {
+            label: cities[index],
+            data: filteredDates.map((date, i) => ({ x: date, y: filteredPrices[i] })),
+            borderColor: comparisonColors[index % comparisonColors.length],
+            backgroundColor: comparisonColors[index % comparisonColors.length] + '33',
+            borderWidth: 2,
+            pointRadius: 1.5,
+            fill: false,
+            tension: 0.1
+        };
+    }).filter(ds => ds !== null);
+
+    if (datasets.length === 0) {
+        console.warn('Comparison Trend Chart: No valid datasets.');
+        errorDiv.text('No historical data available for selected cities.').removeClass('d-none');
+        return;
+    }
+
+    try {
+        comparisonTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            plugins: [{
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 2;
+                },
+                afterDraw: (chart) => {
+                    chart.ctx.restore();
+                }
+            }],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                        type: 'time', 
+                        time: { unit: 'year', tooltipFormat: 'MMM YYYY', displayFormats: { month: 'MMM YYYY', year: 'YYYY' } }, 
+                        title: { display: true, text: 'Date' } 
+                    },
+                    y: { 
+                        beginAtZero: false, 
+                        title: { display: true, text: 'Price (₹)' }, 
+                        ticks: { callback: value => '₹' + value.toFixed(2) } 
+                    }
+                },
+                plugins: {
+                    tooltip: { 
+                        mode: 'index', 
+                        intersect: false, 
+                        callbacks: { 
+                            label: context => `${context.dataset.label}: ₹${context.parsed.y.toFixed(2)}` 
+                        } 
+                    },
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Historical Price Trends' }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+            }
+        });
+        console.log('Comparison Trend Chart created successfully.');
+    } catch (err) {
+        console.error(`Error creating Comparison Trend Chart: ${err.message}`);
+        errorDiv.text('Error rendering historical trends chart.').removeClass('d-none');
+    }
+}
+
+function createComparisonPredictionChart(predictionResults, cities) {
+    const ctx = document.getElementById('comparisonPredictionChart')?.getContext('2d');
+    const errorDiv = $('#comparisonError');
+    if (!ctx) {
+        console.error('Comparison Prediction Chart canvas not found');
+        errorDiv.text('Chart rendering error: Canvas not found.').removeClass('d-none');
+        return;
+    }
+
+    if (comparisonPredictionChart) comparisonPredictionChart.destroy();
+    errorDiv.addClass('d-none');
+
+    const datasets = predictionResults.map((data, index) => {
+        const predYearDataValid = data?.predictions?.next_calendar_year && isChartDataValid(data.predictions.next_calendar_year);
+        if (!predYearDataValid) {
+            console.warn(`Comparison Prediction Chart: No valid prediction data for ${cities[index]}`);
+            return null;
+        }
+        return {
+            label: cities[index],
+            data: data.predictions.next_calendar_year.dates.map((date, i) => ({
+                x: date,
+                y: data.predictions.next_calendar_year.prices[i]
+            })),
+            borderColor: comparisonColors[index % comparisonColors.length],
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: comparisonColors[index % comparisonColors.length],
+            fill: false,
+            tension: 0.1
+        };
+    }).filter(ds => ds !== null);
+
+    if (datasets.length === 0) {
+        console.warn('Comparison Prediction Chart: No valid datasets.');
+        errorDiv.text('No prediction data available for selected cities.').removeClass('d-none');
+        return;
+    }
+
+    try {
+        comparisonPredictionChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            plugins: [{
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 2;
+                },
+                afterDraw: (chart) => {
+                    chart.ctx.restore();
+                }
+            }],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                        type: 'time', 
+                        time: { unit: 'month', tooltipFormat: 'MMM YYYY', displayFormats: { month: 'MMM YYYY' } }, 
+                        title: { display: true, text: 'Month' } 
+                    },
+                    y: { 
+                        beginAtZero: false, 
+                        title: { display: true, text: 'Price (₹)' }, 
+                        ticks: { callback: value => '₹' + value.toFixed(2) } 
+                    }
+                },
+                plugins: {
+                    tooltip: { 
+                        mode: 'index', 
+                        intersect: false, 
+                        callbacks: { 
+                            label: context => `${context.dataset.label}: ₹${context.parsed.y.toFixed(2)}` 
+                        } 
+                    },
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Predicted Prices for Next Calendar Year' }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+            }
+        });
+        console.log('Comparison Prediction Chart created successfully.');
+    } catch (err) {
+        console.error(`Error creating Comparison Prediction Chart: ${err.message}`);
+        errorDiv.text('Error rendering prediction chart.').removeClass('d-none');
+    }
+}
+
+function populateComparisonTable(historicalResults, predictionResults, cities) {
+    const tableBody = $('#comparisonTableBody');
+    tableBody.empty();
+
+    cities.forEach((city, index) => {
+        const historical = historicalResults[index];
+        const prediction = predictionResults[index];
+
+        // Latest Price
+        const latestPrice = historical?.daily?.prices?.slice(-1)[0];
+        const latestPriceText = latestPrice !== undefined && !isNaN(latestPrice) 
+            ? `₹ ${latestPrice.toFixed(2)}` 
+            : 'N/A';
+
+        // Average Next 12 Months
+        const avgNext12Months = prediction?.predictions?.next_12_months?.prices;
+        const avgNext12MonthsText = avgNext12Months?.length > 0 && avgNext12Months.every(p => !isNaN(p)) 
+            ? `₹ ${(avgNext12Months.reduce((a, b) => a + b, 0) / avgNext12Months.length).toFixed(2)}`
+            : 'N/A';
+
+        // Prediction Confidence
+        const confidence = prediction?.predictions?.confidence;
+        const confidenceText = confidence !== null && !isNaN(confidence) 
+            ? `${(confidence * 100).toFixed(1)}%` 
+            : 'N/A';
+
+        // Price Volatility
+        const volatility = historical?.daily?.prices?.length > 1 && historical.daily.prices.every(p => !isNaN(p))
+            ? calculateVolatility(historical.daily.prices)
+            : null;
+        const volatilityText = volatility !== null && !isNaN(volatility) 
+            ? `${volatility.toFixed(2)}%` 
+            : 'N/A';
+
+        // Trend Direction
+        const trend = historical?.daily?.prices?.length > 1 && historical.daily.prices.every(p => !isNaN(p))
+            ? determineTrend(historical.daily.prices)
+            : 'N/A';
+
+        tableBody.append(`
+            <tr>
+                <td>${city}</td>
+                <td>${latestPriceText}</td>
+                <td>${avgNext12MonthsText}</td>
+                <td>${confidenceText}</td>
+                <td>${volatilityText}</td>
+                <td>${trend}</td>
+            </tr>
+        `);
+    });
+}
+
+function destroyComparisonCharts() {
+    if (comparisonTrendChart) {
+        comparisonTrendChart.destroy();
+        comparisonTrendChart = null;
+    }
+    if (comparisonPredictionChart) {
+        comparisonPredictionChart.destroy();
+        comparisonPredictionChart = null;
+    }
+    console.log('Comparison charts destroyed.');
+}
+
+// Helper Functions
+function formatDisplayDate(dateStr) {
+    if (!dateStr) return '--';
+    return moment(dateStr).format('DD MMM YYYY');
+}
+
+function formatDisplayMonthYear(dateStr) {
+    if (!dateStr) return '--';
+    return moment(dateStr).format('MMM YYYY');
+}
+
+function isValidCoords(coords) {
+    return coords && typeof coords.lat === 'number' && typeof coords.lon === 'number' && 
+           !isNaN(coords.lat) && !isNaN(coords.lon);
+}
+
+function percentile(arr, p) {
+    const index = Math.ceil((p / 100) * arr.length) - 1;
+    return arr[index] || NaN;
+}
+
+function calculateVolatility(prices) {
+    if (prices.length < 2) return null;
+    const returns = [];
+    for (let i = 1; i < prices.length; i++) {
+        if (prices[i - 1] !== 0) {
+            returns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+        }
+    }
+    if (returns.length === 0) return null;
+    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+    return Math.sqrt(variance) * 100;
+}
+
+function determineTrend(prices) {
+    if (prices.length < 2) return 'N/A';
+    const recentPrices = prices.slice(-30);
+    if (recentPrices.length < 2) return 'Stable';
+    const delta = recentPrices[recentPrices.length - 1] - recentPrices[0];
+    if (Math.abs(delta) < 0.01 * recentPrices[0]) return 'Stable';
+    return delta > 0 ? 'Upward' : 'Downward';
+}
